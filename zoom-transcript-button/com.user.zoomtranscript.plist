@@ -9,7 +9,7 @@
 	<!-- Run Swift binary - add zoom-transcript-save to Accessibility in System Settings -->
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Users/ascott/.cursor/worktrees/zoom-transcript-button/oia/zoom-transcript-button/.build/release/zoom-transcript-save</string>
+		<string>/Users/ascott/src/ascott-tools/zoom-transcript-button/.build/release/zoom-transcript-save</string>
 	</array>
 	
 	<!-- Run at load (when user logs in) -->

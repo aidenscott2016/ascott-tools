@@ -21,9 +21,11 @@ For agent-specific operating instructions, see `AGENTS.md` in this directory.
 
 ## Build
 
+Always clean first to avoid stale module cache errors (especially after moving or cloning the repo):
+
 ```bash
 cd zoom-transcript-button
-swift build -c release
+swift package clean && swift build -c release
 ```
 
 Binary output:
@@ -34,13 +36,15 @@ Binary output:
 
 ### 1) Grant Accessibility Permission
 
-Open `System Settings -> Privacy & Security -> Accessibility`.
+macOS will not show the binary in the System Settings file picker reliably. The correct approach is to **run the binary directly** — this triggers the native permission dialog:
 
-Add:
+```bash
+./.build/release/zoom-transcript-save --debug
+```
 
-`./.build/release/zoom-transcript-save`
+Click **Allow** in the dialog that appears. Then stop the process (`Ctrl+C`).
 
-Only Accessibility permission is required.
+> If no dialog appears, open System Settings → Privacy & Security → Accessibility, click `+`, and navigate to the binary manually.
 
 ### 2) Run a One-Shot Test
 
@@ -86,25 +90,48 @@ Press `Ctrl+C` to stop.
 
 **You can run the install commands below manually, but the easiest path is: ask your coding agent to install it for you.**
 
-### 1) Set the Binary Path in the plist
+### 1) Update the Binary Path in the plist
 
-Edit `com.user.zoomtranscript.plist` and ensure `ProgramArguments[0]` is the absolute path to your built binary.
-
-### 2) Install and Load
+The plist contains a hardcoded absolute path that must match the binary location on your machine. Run this from the repo root to update it in one step:
 
 ```bash
-cp com.user.zoomtranscript.plist ~/Library/LaunchAgents/com.user.zoomtranscript.plist
+BINARY="$(pwd)/zoom-transcript-button/.build/release/zoom-transcript-save"
+/usr/libexec/PlistBuddy -c "Set :ProgramArguments:0 $BINARY" zoom-transcript-button/com.user.zoomtranscript.plist
+```
+
+### 2) Grant Accessibility Permission
+
+Run the binary directly to trigger the macOS permission dialog:
+
+```bash
+zoom-transcript-button/.build/release/zoom-transcript-save --debug
+```
+
+Click **Allow**, then stop with `Ctrl+C`.
+
+### 3) Install and Load
+
+```bash
+cp zoom-transcript-button/com.user.zoomtranscript.plist ~/Library/LaunchAgents/com.user.zoomtranscript.plist
 launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.user.zoomtranscript.plist 2>/dev/null || true
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.user.zoomtranscript.plist
 ```
 
-### 3) Verify
+### 4) Verify
 
 ```bash
 launchctl list | rg "com.user.zoomtranscript"
 ```
 
-### 4) Manage
+A running agent shows a PID in the first column. Confirm permission was accepted in the logs:
+
+```bash
+/usr/bin/log show --predicate 'subsystem == "com.user.zoomtranscript"' --last 1m --info
+```
+
+Look for `Permission OK, monitoring for meetings...`. If you still see the Accessibility warning, re-run step 2 and restart the agent.
+
+### 5) Manage
 
 ```bash
 # Restart
@@ -124,12 +151,12 @@ Transcript file location (written by Zoom):
 
 `~/Documents/Zoom/[Meeting Name]/meeting_saved_closed_caption.txt`
 
-Unified logs:
+Unified logs (use `/usr/bin/log` explicitly to avoid shell alias conflicts):
 
 ```bash
-log stream --level info --predicate 'subsystem == "com.user.zoomtranscript"'
-log stream --level debug --predicate 'subsystem == "com.user.zoomtranscript"'
-log show --predicate 'subsystem == "com.user.zoomtranscript"' --last 1h
+/usr/bin/log stream --level info --predicate 'subsystem == "com.user.zoomtranscript"'
+/usr/bin/log stream --level debug --predicate 'subsystem == "com.user.zoomtranscript"'
+/usr/bin/log show --predicate 'subsystem == "com.user.zoomtranscript"' --last 1h --info
 ```
 
 ## Troubleshooting
@@ -156,6 +183,25 @@ log show --predicate 'subsystem == "com.user.zoomtranscript"' --last 1h
 - Verify plist binary path is absolute and correct.
 - Re-run the `launchctl bootstrap` command.
 - Check logs with the unified logging commands above.
+
+### Accessibility warning keeps appearing in logs
+
+The permission was not accepted. Run the binary directly in a terminal to trigger the native dialog, click Allow, then restart the LaunchAgent:
+
+```bash
+zoom-transcript-button/.build/release/zoom-transcript-save --debug
+# Click Allow in the dialog, then Ctrl+C
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.user.zoomtranscript.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.user.zoomtranscript.plist
+```
+
+### Build fails with "PCH was compiled with module cache path" error
+
+The module cache is stale from a previous build location. Clean and rebuild:
+
+```bash
+swift package clean && swift build -c release
+```
 
 ## How It Works
 
