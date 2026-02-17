@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Label: unique identifier for this LaunchAgent -->
+	<key>Label</key>
+	<string>com.user.zoomtranscript</string>
+	
+	<!-- Run Swift binary - add zoom-transcript-save to Accessibility in System Settings -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/ascott/.cursor/worktrees/zoom-transcript-button/oia/zoom-transcript-button/.build/release/zoom-transcript-save</string>
+	</array>
+	
+	<!-- Run at load (when user logs in) -->
+	<key>RunAtLoad</key>
+	<true/>
+	
+	<!-- Keep the script running (restart if it crashes) -->
+	<key>KeepAlive</key>
+	<true/>
+	
+	<!-- Working directory (optional) -->
+	<key>WorkingDirectory</key>
+	<string>/tmp</string>
+	
+	<!-- Nice value (process priority, 0 is normal, positive is lower priority) -->
+	<key>Nice</key>
+	<integer>5</integer>
+	
+	<!-- Throttle interval: minimum seconds between restarts (prevents rapid restart loops) -->
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+</dict>
+</plist>
